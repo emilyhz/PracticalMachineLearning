@@ -36,7 +36,7 @@ TrainingData<-TrainingData[,-(1:5)]
 TestingData<-TestingData[,-(1:5)]
 
 
-###spilt the "TrainingData" into the training set (60%) and testing set (49%).
+###spilt the "TrainingData" into the training set (60%) and testing set (40%).
 
 trainindex<-createDataPartition(TrainingData$classe,p=0.6,list=FALSE)
 
@@ -70,17 +70,17 @@ lda.fit$finalModel
 
 # comparing these three models,using confusionMatrix fuction,it shows rf is the best.
 
-# rf method: confustion matrix(confmat.rf) and overall accuracy (ConfMat.rf$overall[1]).
+# rf method: 
 confmat.rf<-confusionMatrix(classe, predict(rf.fit,newdata=testdata))
 
 ConfMat.rf$overall[1]
 
-# rpart method: confustion matrix(confmat.rpart) and overall accuracy (ConfMat.rpart$overall[1]).
+# rpart method: 
 confmat.rpart<-confusionMatrix(classe, predict(rpart.fit,newdata=testdata))
 
 ConfMat.rpart$overall[1]
 
-# lda method: confustion matrix(confmat.lda) and overall accuracy (ConfMat.lda$overall[1]).
+# lda method: 
 confmat.lda<-confusionMatrix(classe, predict(lda.fit,newdata=testdata))
 
 ConfMat.lda$overall[1] 
@@ -95,7 +95,7 @@ print(preds)
 
 # to write the predictions to files
 pml_write=function(x){
-  n=lenght(x)
+  n=length(x)
   for (i in 1:n){
       filename=paste0("problem_id_",i,".txt")
       write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
