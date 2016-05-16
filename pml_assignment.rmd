@@ -30,7 +30,7 @@ TrainingData<-training1[,halfNA==F]
 
 TestingData<-testing1[,halfNA==F]
 
-# delete the first five variables: X, user_name, raw_timestramp_part_1,raw_timestamp_part_2,cvtd_timestamp.
+# delete the first five variables:
 TrainingData<-TrainingData[,-(1:5)]
 
 TestingData<-TestingData[,-(1:5)]
