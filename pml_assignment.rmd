@@ -1,4 +1,8 @@
 
+library(lattice)
+
+library(ggplot2)
+
 library(caret)
 
 library(knitr)
