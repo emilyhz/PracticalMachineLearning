@@ -1,0 +1,105 @@
+
+library(caret)
+
+library(knitr)
+
+training<-read.csv("pml-training.csv")
+
+testing<-read.csv("pml-testing.csv")
+
+dim(training)
+
+dim(testing)
+
+summary(training)
+
+### Data Pre-processing
+set.seed(20)
+
+# delete the variables with nearly zero variance.
+zerov<-nearZeroVar(training)
+
+training1<-training[,-zerov]
+
+testing1<-testing[,-zerov]
+
+# delete the variables with missingness (NA) is over 50%.
+halfNA<-sapply(training1,function(x) mean(is.na(x)))>0.50
+
+TrainingData<-training1[,halfNA==F]
+
+TestingData<-testing1[,halfNA==F]
+
+# delete the first five variables:
+TrainingData<-TrainingData[,-(1:5)]
+
+TestingData<-TestingData[,-(1:5)]
+
+
+###spilt the "TrainingData" into the training set (60%) and testing set (40%).
+
+trainindex<-createDataPartition(TrainingData$classe,p=0.6,list=FALSE)
+
+traindata=TrainingData[trainindex,]
+
+testdata=TrainingData[-trainindex,]
+
+
+set.seed(1234)
+
+
+#model building,we try three methods:lda,rpart,rf.
+
+# 5 fold random forest method (rf):
+fitControl<-trainControl(method="cv",number=5,verboseIter=F)
+
+rf.fit<-train(classe ~., data=traindata,method="rf",trControl=fitControl)
+
+rf.fit$finalModel
+
+# classification tree method (rpart):
+rpart.fit<-train(classe ~., data=traindata,method="rpart")
+
+rpart.fit$finalModel
+
+# linear discriminant analysis (lda):
+lda.fit<-train(classe ~., data=traindata,method="lda")
+
+lda.fit$finalModel
+ 
+
+# comparing these three models,using confusionMatrix fuction,it shows rf is the best.
+
+# rf method: 
+confmat.rf<-confusionMatrix(classe, predict(rf.fit,newdata=testdata))
+
+ConfMat.rf$overall[1]
+
+# rpart method: 
+confmat.rpart<-confusionMatrix(classe, predict(rpart.fit,newdata=testdata))
+
+ConfMat.rpart$overall[1]
+
+# lda method: 
+confmat.lda<-confusionMatrix(classe, predict(lda.fit,newdata=testdata))
+
+ConfMat.lda$overall[1] 
+
+
+
+# using rf method to predict the 20 observation in the TestingData set
+preds<-as.character(predict(rf.fit,TestingData))
+
+print(preds)
+
+
+# to write the predictions to files
+pml_write=function(x){
+  n=length(x)
+  for (i in 1:n){
+      filename=paste0("problem_id_",i,".txt")
+      write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+   }
+ }
+
+pml_write(preds)
