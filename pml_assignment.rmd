@@ -1,109 +1,105 @@
+# this function is for coursera "Practical Machine Learning" Course from Johns Hopkins  university.
 
-library(lattice)
+# Background: In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+## input data from: The training data for this project are available here:https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+## The test data are available here:https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
 
-library(ggplot2)
 
+
+# 1.input data
 library(caret)
-
 library(knitr)
+library(randomForest)
 
 training<-read.csv("pml-training.csv")
-
 testing<-read.csv("pml-testing.csv")
 
 dim(training)
-
 dim(testing)
-
 summary(training)
 
-### Data Pre-processing
+
+# 2.Data Pre-processing
 set.seed(20)
 
-# delete the variables with nearly zero variance.
+##(1) delete the variables with nearly zero variance.
 zerov<-nearZeroVar(training)
-
 training1<-training[,-zerov]
-
 testing1<-testing[,-zerov]
 
-# delete the variables with missingness (NA) is over 50%.
+##(2) delete the variables with missingness (NA) is over 50%.
 halfNA<-sapply(training1,function(x) mean(is.na(x)))>0.50
-
 TrainingData<-training1[,halfNA==F]
-
 TestingData<-testing1[,halfNA==F]
 
-# delete the first five variables:
+##(3) delete the first five variables: X, user_name, raw_timestramp_part_1,raw_timestamp_part_2,cvtd_timestamp.
 TrainingData<-TrainingData[,-(1:5)]
-
 TestingData<-TestingData[,-(1:5)]
 
+##(4) note: so now, "TrainingData" is the training set. "TestingData" is the observation to test.
 
-###spilt the "TrainingData" into the training set (60%) and testing set (40%).
 
+
+# 3. spilt the "TrainingData" into the training set and testing set
+## the "TrainingData" observations is set into 60% of "traindata" and 40% of "testdata".
 trainindex<-createDataPartition(TrainingData$classe,p=0.6,list=FALSE)
-
 traindata=TrainingData[trainindex,]
-
 testdata=TrainingData[-trainindex,]
-
-
+dim(traindata)
+dim(testdata)
 set.seed(1234)
 
 
-#model building,we try three methods:lda,rpart,rf.
+# 4. model building
+## we can use three methods to fit the data:random forest (rf); Linear discriminant anaalysis (lda);classification tree(rpart); 
+## "rf" method is one of the best performers that are still interpretable, and more robust to correlated variables.
 
-# 5 fold random forest method (rf):
+## (1) define cross-validation experiment:
 fitControl<-trainControl(method="cv",number=5,verboseIter=F)
 
+## (2) perform the cross validation:
+## 5 fold random forest method (rf):
 rf.fit<-train(classe ~., data=traindata,method="rf",trControl=fitControl)
-
 rf.fit$finalModel
 
-# classification tree method (rpart):
+## classification tree method (rpart):
 rpart.fit<-train(classe ~., data=traindata,method="rpart")
-
 rpart.fit$finalModel
 
-# linear discriminant analysis (lda):
+## linear discriminant analysis (lda):
 lda.fit<-train(classe ~., data=traindata,method="lda")
-
 lda.fit$finalModel
  
 
-# comparing these three models,using confusionMatrix fuction,it shows rf is the best.
+# (3) comparing these three models,using confusionMatrix fuction
+## it shows the rf method is superior in comparision to other two.
 
-# rf method: 
-confmat.rf<-confusionMatrix(classe, predict(rf.fit,newdata=testdata))
+## rf method: confustion matrix(confmat.rf) and overall accuracy (ConfMat.rf$overall[1]).
+confmat.rf<-confusionMatrix(testdata$classe, predict(rf.fit,newdata=testdata))
+Confmat.rf$overall[1]
 
-ConfMat.rf$overall[1]
+## rpart method: confustion matrix(confmat.rpart) and overall accuracy (ConfMat.rpart$overall[1]).
+confmat.rpart<-confusionMatrix(testdata$classe, predict(rpart.fit,newdata=testdata))
+Confmat.rpart$overall[1]
 
-# rpart method: 
-confmat.rpart<-confusionMatrix(classe, predict(rpart.fit,newdata=testdata))
+## lda method: confustion matrix(confmat.lda) and overall accuracy (ConfMat.lda$overall[1]).
+confmat.lda<-confusionMatrix(testdata$classe, predict(lda.fit,newdata=testdata))
+Confmat.lda$overall[1] 
 
-ConfMat.rpart$overall[1]
-
-# lda method: 
-confmat.lda<-confusionMatrix(classe, predict(lda.fit,newdata=testdata))
-
-ConfMat.lda$overall[1] 
-
+## so then i will use the rf method to predict.
 
 
-# using rf method to predict the 20 observation in the TestingData set
+
+# 5.predict the 20 observation in the TestingData set
 preds<-as.character(predict(rf.fit,TestingData))
 
-print(preds)
 
 
-# to write the predictions to files
-pml_write=function(x){
-  n=length(x)
-  for (i in 1:n){
-      filename=paste0("problem_id_",i,".txt")
-      write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
-   }
- }
+# 6. write the predictions to files
 
-pml_write(preds)
+ write.csv(preds,"problem.csv")
+ knit2html("problem.csv")
+
+}
+
+
